@@ -1,6 +1,6 @@
 use crate::randomwordgenerator::get_random_word;
 use crate::display::display_game_ui;
-use std::io;
+use std::io::{self, Read};
 pub struct GameState {
   pub hangman_stage: i32, 
   pub target_word: String,
@@ -50,16 +50,14 @@ pub fn start_game() {
 
     let input_letter = loop { 
       match get_user_input() {
-        Some(c) => {
-          if c.is_alphabetic() {
-            if game_state.letters_used.contains(&c) {
-              println!("You've already picked {c}, choose another letter.")
-            } else {
-              break c
-            }
+        Ok(c) => {
+          if game_state.letters_used.contains(&c) {
+            println!("You have already used {c}, choose another letter");
+          } else {
+            break c;
           }
         },
-        None => { println!("Please enter a character from a-z")}
+        Err(e) => { println!("{e}") }
       }
     };
 
@@ -78,38 +76,32 @@ pub fn start_game() {
   }
 }
 
-fn get_user_input() -> Option<char> {
+fn get_user_input() -> Result<char, String> {
   println!("\n\nEnter a letter: ");
   let mut input = String::new();
-  io::stdin().read_line(&mut input).expect("Failed to read input");
+  io::stdin()
+    .read_line(&mut input)
+    .map_err(|e| e.to_string())?;
 
   if input.trim().len() > 1 {
-    return None;
+    return Err("Please enter a single character.".to_string());
   }
 
-  match input.trim().chars().next() {
-    Some(c) => {
-      if c.is_alphabetic() {
-         return Some(c)
-      } else {
-        None
-      }
-    }
-    None => {
-      None
-    }
+  let c = input.trim().chars().next().ok_or("No character entered")?;
+
+  if !c.is_alphabetic() {
+    return Err("Please enter an alphabetic character from a-z".to_string());
   }
+
+  Ok(c)
 }
 
-fn get_matching_current_word_idxs(c: &char, target_word: &String) -> Vec<usize> {
-  let mut indices: Vec<usize> = Vec::new();
-
-  for i in 0..target_word.len() {
-    if target_word.as_bytes()[i] as char == *c {
-      indices.push(i);
-    }
-  }
-  indices
+fn get_matching_current_word_idxs(c: &char, target_word: &str) -> Vec<usize> {
+  target_word.chars()
+    .enumerate()
+    .filter(|(_, ch)| ch == c)
+    .map(|(i, _)| i)
+    .collect()
 }
 
 pub fn init_game_state(target_word: String) -> GameState {

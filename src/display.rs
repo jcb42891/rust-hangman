@@ -10,12 +10,22 @@ pub fn display_game_ui(game_state: &GameState) {
 fn draw_hangman(game_state: &GameState) {
   println!("-----");
   println!("|   |");
-  // Head
-  println!("|   {}", if game_state.hangman_stage >= 1 { "O" } else { "" });
+  println!("|   {}", match game_state.hangman_stage {
+    0 => "",
+    _ => "O"
+  });
+  println!("| {}", match game_state.hangman_stage {
+    0..=1 => "",
+    2 => "--|",
+    _ => "--|--"
+  });
   // Arms
-  println!("| {}", if game_state.hangman_stage == 2 { "--|" } else if game_state.hangman_stage >= 3 { "--|--" } else { "" });
   // Left Leg
-  println!("|  {}", if game_state.hangman_stage == 4 { "/" } else if game_state.hangman_stage == 5 {"/ \\"} else { "" });
+  println!("|  {}", match game_state.hangman_stage {
+    0..=3 => "",
+    4 => "/",
+    _ => "/ \\"
+  });
   // Right & Left leg
   println!("|");
   println!("_________\n");
@@ -46,6 +56,6 @@ fn check_and_draw_win_loss_conditions(game_state: &GameState) {
 
   if game_state.hangman_stage >= 5 {
     // User has lost
-    println!("Oh no! You ran out of tries.\n\nThe word was: {}.\n\nTry again!", game_state.target_word);
+    println!("\n\nOh no! You ran out of tries.\n\nThe word was: {}.\n\nTry again!", game_state.target_word);
   }
 }
